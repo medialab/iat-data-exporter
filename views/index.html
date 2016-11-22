@@ -91,7 +91,7 @@
         $.ajax({
           url: '/fetch',
           type: 'POST',
-          data: JSON.stringify({file: $input.val().trim()}),
+          data: JSON.stringify({uri: $input.val().trim()}),
           contentType: 'application/json; charset=utf-8',
           dataType: 'json',
           success: function(data) {
