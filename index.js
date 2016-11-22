@@ -31,6 +31,8 @@ app.post('/fetch', jsonParser, function (req, res) {
           .then(function (data) {
             isTransforming = false;
             isReady = true;
+
+            console.log(data);
           });
       })
     });
