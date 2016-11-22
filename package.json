@@ -1,0 +1,16 @@
+{
+  "name": "iat-data-exporter",
+  "version": "1.0.0",
+  "description": "Given the URI of a CSV export from a Heroku dataclip, process/refine data and make it available for download.",
+  "main": "index.js",
+  "repository": {
+    "url": "git@github.com:medialab/iat-data-exporter.git",
+    "type": "git"
+  },
+  "author": "Davy Peter Braun <davy.braun@sciencespo.fr>",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.14.0",
+    "request": "^2.79.0"
+  }
+}
