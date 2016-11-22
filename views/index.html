@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>IAT Data Exporter</title>
+  <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.0.0-alpha.5/css/bootstrap.min.css">
+  <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+  <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+  <style type="text/css">
+    body {
+      padding-top: 70px;
+    }
+
+    button > .fa, button > .msg-loading {
+      display: none;
+    }
+
+    button.disabled > .fa, button.disabled > .msg-loading {
+      display: inline-block;
+    }
+
+    button.disabled > .msg-submit {
+      display: none;
+    }
+
+    #alert {
+      visibility: hidden;
+    }
+
+    #alert.visible {
+      visibility: visible;
+    }
+  </style>
+</head>
+<body>
+  <main class="container">
+    <header class="row">
+      <h1 class="col-xs-12">IAT Data Exporter</h1>
+      <p class="col-xs-12">Please set the URL to the dataclip CSV export, and press "Get data"</p>
+    </header>
+    <hr>
+    <section class="row">
+      <div class="form-group col-xs-6">
+        <div id="alert" class="alert" role="alert"></div>
+          <div class="input-group">
+            <input name="url" id="url" type="text" class="form-control" placeholder="URL of CSV dataclip file">
+            <span class="input-group-btn">
+              <button class="btn btn-primary" type="button">
+                <i class="fa fa-circle-o-notch fa-spin"></i>
+                <span class="msg-loading">Loading</span>
+                <span class="msg-submit">Get data</span>
+              </button>
+            </span>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script type="text/javascript">
+    $(function () {
+      var $btn = $('button');
+      var $input = $('input');
+      var $alert = $('#alert');
+
+      var showWarningMsg = function (msg) {
+        $alert.addClass('alert-warning')
+              .html(msg)
+              .addClass('visible');
+      };
+
+      var resetAlert = function () {
+        $alert.removeClass('alert-danger')
+              .removeClass('alert-success')
+              .removeClass('alert-warning')
+              .html('')
+              .removeClass('visible');
+      };
+
+      $btn.click(function () {
+        resetAlert();
+
+        if ($input.val().trim() === '') {
+          return showWarningMsg('Please provide the URL.');
+        }
+
+        if (!/(?:^https:\/\/dataclips\.heroku\.com)\/[^.]*(?:\.csv)$/.test($input.val().trim())) {
+          return showWarningMsg("Thr URL is invalid (don't forget to append \".csv\" to the URL of the dataclip...)");
+        }
+
+        $btn.attr('disabled', 'disabled').addClass('disabled');
+
+        $.ajax({
+          url: '/fetch',
+          type: 'POST',
+          data: JSON.stringify({file: $input.val().trim()}),
+          contentType: 'application/json; charset=utf-8',
+          dataType: 'json',
+          success: function(data) {
+            console.log(data)
+          }
+        });
+      });
+    });
+  </script>
+</body>
+</html>
