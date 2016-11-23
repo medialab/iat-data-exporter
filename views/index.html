@@ -22,11 +22,11 @@
       display: none;
     }
 
-    #alert {
+    #alert, #progress-container {
       visibility: hidden;
     }
 
-    #alert.visible {
+    #alert.visible, #progress-container.visible {
       visibility: visible;
     }
   </style>
@@ -34,24 +34,41 @@
 <body>
   <main class="container">
     <header class="row">
-      <h1 class="col-xs-12">IAT Data Exporter</h1>
-      <p class="col-xs-12">Please set the URL to the dataclip CSV export, and press button.</p>
+      <h1 class="col-xs-6 offset-xs-3">IAT Data Exporter <small>(BETA)</small></h1>
+      <p class="col-xs-6 offset-xs-3">Please set the URL to the dataclip CSV export, and press the <strong>start</strong> button below.</p>
     </header>
-    <hr>
+
+    <hr class="col-xs-6 offset-xs-3">
+
     <section class="row">
-      <div class="form-group col-xs-6">
+      <div id="progress-container" class="col-xs-6 offset-xs-3">
+        <div class="info">
+          <span class="status"></span>
+          <span class="percentage"></span>
+        </div>
+        <progress class="progress" value="0" max="100">
+          <div class="progress">
+            <span class="progress-bar" style="width: 0%;"></span>
+          </div>
+        </progress>
+      </div>
+
+      <br>
+
+      <div class="form-group col-xs-6 offset-xs-3">
         <div id="alert" class="alert" role="alert"></div>
-          <div class="input-group">
-            <input name="url" id="url" type="text" class="form-control" placeholder="URL of CSV dataclip file">
-            <span class="input-group-btn">
-              <button class="btn btn-primary" type="button">
-                <i class="fa fa-circle-o-notch fa-spin"></i>
-                <span class="msg-loading">Loading</span>
-                <span class="msg-submit">Get data</span>
-              </button>
-            </span>
+        <div class="input-group">
+          <input name="url" id="url" type="text" class="form-control" placeholder="URL of CSV dataclip file">
+          <span class="input-group-btn">
+            <button class="btn btn-primary" type="button" tabindex="0">
+              <i class="fa fa-circle-o-notch fa-spin"></i>
+              <span class="msg-loading">Loading</span>
+              <span class="msg-submit">Start</span>
+            </button>
+          </span>
         </div>
       </div>
+
     </section>
   </main>
 
@@ -60,6 +77,17 @@
       var $btn = $('button');
       var $input = $('input');
       var $alert = $('#alert');
+      var $progress = $('#progress-container');
+
+      var lockForm = function () {
+        $btn.attr('disabled', 'disabled').addClass('disabled');
+        $input.attr('disabled', 'disabled').addClass('disabled');
+      };
+
+      var resetForm = function () {
+        $btn.removeAttr('disabled').removeClass('disabled');
+        $input.removeAttr('disabled').removeClass('disabled');
+      };
 
       var showWarningMsg = function (msg) {
         $alert.addClass('alert-warning')
@@ -67,12 +95,83 @@
               .addClass('visible');
       };
 
+      var showErrorMsg = function (msg) {
+        $alert.addClass('alert-danger')
+              .html(msg)
+              .addClass('visible');
+      };
+
+      var showSuccessMsg = function (link) {
+        var msg = '<h3>Your file is ready. <a href="' + link + '">Download it here.</a></h3><hr>';
+        msg += '<br><strong>Do not refresh the page before your download your file</strong>, ';
+        msg += 'otherwise your current file will disappear and you will have to redo the whole process again.'
+
+        resetAlert();
+        $alert.addClass('alert-success')
+              .html(msg)
+              .addClass('visible');
+      }
+
       var resetAlert = function () {
         $alert.removeClass('alert-danger')
               .removeClass('alert-success')
               .removeClass('alert-warning')
               .html('')
               .removeClass('visible');
+      };
+
+      var setDownloadProgress = function (val, status) {
+        if (!$progress.hasClass('visible')) {
+            $progress.addClass('visible');
+        }
+        $progress.find('.progress').attr('value', +val);
+        $progress.find('.progress-bar').css('width', val.toString() + '%');
+        if ($progress.find('.info .status') !== status) {
+          $progress.find('.info .status').html(status);
+        }
+        $progress.find('.info .percentage').html(val.toString() + '%');
+      };
+
+      var setTransformationProgress = function () {
+        $progress.removeClass('visible');
+        $progress.find('.progress').attr('value', 0);
+        $progress.find('.progress-bar').css('width', '0');
+        $progress.find('.info .status').html('');
+        $progress.find('.info .percentage').html('');
+
+        showWarningMsg('Transforming raw data into CSV. This may take a few seconds...');
+      }
+
+      var triggerStatusRequests = function () {
+        return new Promise(function (resolve, reject) {
+          var intv = setInterval(function () {
+            try {
+              $.get('/status', function (data) {
+                console.log(data)
+                if (data && data.progress && data.progress > 99.5) {
+                  setTransformationProgress();
+                }
+
+                if (data && data.status === 'ready') {
+                  clearInterval(intv);
+                  showSuccessMsg(data.payload);
+                  return resolve(data.payload);
+                }
+
+                if (data && data.status === 'error') {
+                  clearInterval(intv);
+                  showErrorMsg(data.message);
+                  resetForm();
+                }
+
+                setDownloadProgress(data.progress, data.status);
+              });
+              $progress.removeClass('visible');
+            } catch (err) {
+              return reject(err.message);
+            }
+          }, 1000);
+        });
       };
 
       $btn.click(function () {
@@ -86,17 +185,19 @@
           return showWarningMsg("The URL is invalid (don't forget to append \".csv\" to the URL of the dataclip...)");
         }
 
-        $btn.attr('disabled', 'disabled').addClass('disabled');
+        lockForm();
 
         $.ajax({
           url: '/fetch',
           type: 'POST',
           data: JSON.stringify({uri: $input.val().trim()}),
           contentType: 'application/json; charset=utf-8',
-          dataType: 'json',
-          success: function(data) {
-            console.log(data)
-          }
+          dataType: 'json'
+        }).done(function(data) {
+          triggerStatusRequests()
+            .then(function (payload) {
+              console.log(payload);
+            });
         });
       });
     });
