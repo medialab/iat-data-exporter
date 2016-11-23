@@ -25,14 +25,20 @@ app.post('/fetch', jsonParser, function (req, res) {
       data.promise.then(function (pathToFile) {
         isFetching = false;
         isTransforming = true;
+        return Promise.resolve(pathToFile);
       })
-      .then(function () {
+      .then(function (pathToFile) {
+        console.log(pathToFile)
         transformer(pathToFile)
-          .then(function (data) {
+          .then(function (results) {
             isTransforming = false;
             isReady = true;
 
-            console.log(data);
+            console.log(results)
+
+            results.then(function (csvContents) {
+              console.log('csvContents', csvContents)
+            });
           });
       })
     });
