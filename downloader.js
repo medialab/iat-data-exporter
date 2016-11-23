@@ -7,11 +7,19 @@ var filename;
 var dest;
 var file;
 var req;
+var isBusy = false;
 
 module.exports = function (uri) {
   return new Promise(function (resolve, reject) {
     filename = Date.now() + '_' + uri.substring(uri.indexOf('.com/') + 5);
     dest = __dirname + '/public/' + filename;
+
+    if (isBusy) {
+      return resolve(dest);
+    }
+
+    isBusy = true;
+
     file = fs.createWriteStream(dest);
 
     req = require('request')({method: 'GET', uri: uri})
@@ -30,6 +38,7 @@ module.exports = function (uri) {
           });
 
           req.on('end', function () {
+            isBusy = true;
             return resolve(dest);
           });
         })
