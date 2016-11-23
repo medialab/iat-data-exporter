@@ -163,7 +163,10 @@ module.exports = function (pathToFile) {
           console.log('Caught an error while parsing IAT data — ', err.message);
         }
 
-        processLine(lines, ++cursor, results, percent);
+        // Update `percent` module with a rough estimate of the progress.
+        percent((cursor / lines.length - 1) / 100);
+
+        return processLine(lines, ++cursor, results, percent);
       })(lines, 0, data, require('./percent'));
 
       return resolve({
