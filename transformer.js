@@ -59,6 +59,7 @@ var trialsFile = function (meta, iat, headerLabelsArray, timeRelatedFieldsArray)
       if (index >= data.length - 1) return results;
 
       // Accumulate the common data...
+      // Prune HTML formatting when needed.
       var row = [
         data[index].id, mTurkId, code, label, timeStarted,
         data[index].left.split('<br /><span style="color:white">').join(' ').split('</span><br />').join(' '),
