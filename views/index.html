@@ -83,7 +83,7 @@
         }
 
         if (!/(?:^https:\/\/dataclips\.heroku\.com)\/[^.]*(?:\.csv)$/.test($input.val().trim())) {
-          return showWarningMsg("Thr URL is invalid (don't forget to append \".csv\" to the URL of the dataclip...)");
+          return showWarningMsg("The URL is invalid (don't forget to append \".csv\" to the URL of the dataclip...)");
         }
 
         $btn.attr('disabled', 'disabled').addClass('disabled');
