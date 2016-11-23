@@ -121,60 +121,64 @@ module.exports = function (pathToFile) {
   // with fields bearing CSV formatted strings for
   // `results`, `errors`, and `meta` data sets.
   return new Promise(function (resolve, reject) {
-    fs.readFile(pathToFile, 'utf8', function(err, contents) {
-      var lines = contents.split('\n');
-      var data = {meta: [], iat: []};
+    try {
+      fs.readFile(pathToFile, 'utf8', function(err, contents) {
+        var lines = contents.split('\n');
+        var data = {meta: [], iat: []};
 
-      (function processLine(lines, cursor, results, percent) {
-        if (cursor >= lines.length - 1) return results;
+        (function processLine(lines, cursor, results, percent) {
+          if (cursor >= lines.length - 1) return results;
 
-        var line = lines[cursor];
+          var line = lines[cursor];
 
-        // Get non-IAT data.
-        var raw = line.indexOf('"') > -1 ?
-                  line.substring(0, line.indexOf('"') - 2) :
-                  null;
+          // Get non-IAT data.
+          var raw = line.indexOf('"') > -1 ?
+                    line.substring(0, line.indexOf('"') - 2) :
+                    null;
 
-        if (!raw) {
-          processLine(lines, ++cursor, results, percent);
-          return;
-        }
+          if (!raw) {
+            processLine(lines, ++cursor, results, percent);
+            return;
+          }
 
-        // Get JSON data payload from IAT.
-        var iat = line.indexOf('"{""') > -1 ?
-                  line.substring(line.indexOf('"{""') + 1 , line.length - 5) :
-                  null;
+          // Get JSON data payload from IAT.
+          var iat = line.indexOf('"{""') > -1 ?
+                    line.substring(line.indexOf('"{""') + 1 , line.length - 5) :
+                    null;
 
-        if (!iat) {
-          processLine(lines, ++cursor, results, percent);
-          return;
-        }
+          if (!iat) {
+            processLine(lines, ++cursor, results, percent);
+            return;
+          }
 
-        // For some reason, double-quotes are doubled again in the file.
-        // Clean them.
-        iat = iat.split('""').join('"').trim();
+          // For some reason, double-quotes are doubled again in the file.
+          // Clean them.
+          iat = iat.split('""').join('"').trim();
 
-        try {
-          iat = JSON.parse(iat);
-          results.meta.push(raw);
-          results.iat.push(iat);
-        } catch (err) {
-          // Errors might occur during parsing, empirically...
-          // Not necessarily a big deal (e.g. unknown characters).
-          console.log('Caught an error while parsing IAT data — ', err.message);
-        }
+          try {
+            iat = JSON.parse(iat);
+            results.meta.push(raw);
+            results.iat.push(iat);
+          } catch (err) {
+            // Errors might occur during parsing, empirically...
+            // Not necessarily a big deal (e.g. unknown characters).
+            console.log('Caught an error while parsing IAT data — ', err.message);
+          }
 
-        // Update `percent` module with a rough estimate of the progress.
-        percent((cursor / lines.length - 1) / 100);
+          // Update `percent` module with a rough estimate of the progress.
+          percent((cursor / lines.length - 1) / 100);
 
-        return processLine(lines, ++cursor, results, percent);
-      })(lines, 0, data, require('./percent'));
+          return processLine(lines, ++cursor, results, percent);
+        })(lines, 0, data, require('./percent'));
 
-      return resolve({
-        meta: metaData(data.meta, data.iat),
-        results: resultsData(data.meta, data.iat),
-        errors: errorsData(data.meta, data.iat)
-      })
-    });
+        return resolve({
+          meta: metaData(data.meta, data.iat),
+          results: resultsData(data.meta, data.iat),
+          errors: errorsData(data.meta, data.iat)
+        });
+      });
+    } catch (err) {
+      return reject(err.message);
+    }
   });
 };
