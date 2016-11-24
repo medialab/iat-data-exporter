@@ -126,7 +126,7 @@ module.exports = function (pathToFile) {
         var lines = contents.split('\n');
         var data = {meta: [], iat: []};
 
-        (function processLine(lines, cursor, results, percent) {
+        (function processLine(lines, cursor, results) {
           if (cursor >= lines.length - 1) return results;
 
           var line = lines[cursor];
@@ -137,7 +137,7 @@ module.exports = function (pathToFile) {
                     null;
 
           if (!raw) {
-            processLine(lines, ++cursor, results, percent);
+            processLine(lines, ++cursor, results);
             return;
           }
 
@@ -147,7 +147,7 @@ module.exports = function (pathToFile) {
                     null;
 
           if (!iat) {
-            processLine(lines, ++cursor, results, percent);
+            processLine(lines, ++cursor, results);
             return;
           }
 
@@ -165,11 +165,8 @@ module.exports = function (pathToFile) {
             console.log('Caught an error while parsing IAT data — ', err.message);
           }
 
-          // Update `percent` module with a rough estimate of the progress.
-          percent((cursor / lines.length - 1) / 100);
-
-          return processLine(lines, ++cursor, results, percent);
-        })(lines, 0, data, require('./percent'));
+          return processLine(lines, ++cursor, results);
+        })(lines, 0, data);
 
         return resolve({
           meta: metaData(data.meta, data.iat),
