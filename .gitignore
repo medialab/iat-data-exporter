@@ -47,4 +47,5 @@ jspm_packages
 .yarn-integrity
 
 # Download folder content
-public/
+*.csv
+*.zip
