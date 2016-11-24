@@ -103,7 +103,7 @@
 
       var showSuccessMsg = function (link) {
         var msg = '<h3>Your file is ready. <a href="' + link + '">Download it here.</a></h3><hr>';
-        msg += '<br><strong>Do not refresh the page before your download your file</strong>, ';
+        msg += '<strong>Do not refresh the page before your download your file</strong>, ';
         msg += 'otherwise your current file will disappear and you will have to redo the whole process again.'
 
         resetAlert();
@@ -148,13 +148,14 @@
             try {
               $.get('/status', function (data) {
                 console.log(data)
-                if (data && data.progress && data.progress > 99.5) {
+                if (data && data.progress && data.progress > 99) {
                   setTransformationProgress();
                 }
 
                 if (data && data.status === 'ready') {
                   clearInterval(intv);
                   showSuccessMsg(data.payload);
+                  $progress.addClass('hide');
                   return resolve(data.payload);
                 }
 
