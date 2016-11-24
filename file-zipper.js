@@ -1,25 +1,14 @@
-module.exports = function (dir) {
+/**
+ * Zip files in a directory.
+ * @param  {strong} dir  Directory path.
+ * @param  {strong} name Name of the zip file.
+ * @return {Promise}     Resolve to the name of the zip file.
+ */
+module.exports = function (dir, name) {
   return new Promise(function (resolve, reject) {
-    // Options -r recursive -j ignore directory info - redirect to stdout
-    var zip = require('child_process').spawn('zip', ['-rj', '-', dir]);
-    var writeStream = require('fs').createWriteStream(dir + 'IAT_export_' + Date.now() + '.zip');
-
-    zip.stdout.on('data', function (data) {
-      writeStream.write(data);
-    });
-
-    zip.stderr.on('data', function (data) {
-      console.log(data)
-    });
-
-    zip.on('exit', function (code) {
-      res.end();
-      if (code !== 0) {
-        return reject('Error while zipping files...');
-      } else {
-        console.log('Zip file is ready');
-        return resolve(writeStream);
-      }
+    require('child_process').exec('zip ' + dir + name + ' -j ' + dir + '*', function (err, stdout, stderr) {
+      if (err) return reject(err);
+      return resolve(name + '.zip');
     });
   });
 }
