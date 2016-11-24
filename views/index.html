@@ -182,7 +182,7 @@
           return showWarningMsg('Please provide the URL.');
         }
 
-        if (!/(?:^https:\/\/dataclips\.heroku\.com)\/[^.]*(?:\.csv)$/.test($input.val().trim())) {
+        if (!/(?:^https:\/\/dataclips\.heroku\.com)\/[^.]*(?:\.csv)$/.test($input.val().trim().toLowerCase())) {
           return showWarningMsg("The URL is invalid (don't forget to append \".csv\" to the URL of the dataclip...)");
         }
 
