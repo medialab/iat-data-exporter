@@ -1,2 +1,2 @@
 # iat-data-exporter
-> Deployed as a webapp. Given the URI of a CSV export from a Heroku dataclip, process/refine data and make it available for download.
+> Given the URI of a CSV, this web app exports from a Heroku dataclip, processes/refines data and make it available for download. Used in the Trustlab project.
