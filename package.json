@@ -1,24 +1,48 @@
 {
   "name": "iat-data-exporter",
-  "version": "1.0.0",
+  "productName": "IAT Data Exporter",
+  "version": "2.0.0",
   "description": "Given the URI of a CSV export from a Heroku dataclip, process/refine data and make it available for download.",
-  "main": "index.js",
-  "scripts": {
-    "start": "nf start",
-    "dev": "node index.js"
-  },
+  "license": "MIT",
   "repository": {
     "url": "git@github.com:medialab/iat-data-exporter.git",
     "type": "git"
   },
-  "author": "Davy Peter Braun <davy.braun@sciencespo.fr>",
-  "license": "MIT",
+  "author": {
+    "name": "Davy Peter Braun",
+    "email": "davy.braun@sciencespo.fr",
+    "url": "http://davybraun.com"
+  },
+  "scripts": {
+    "test": "xo",
+    "start": "electron .",
+    "build": "electron-packager . --out=dist --asar --overwrite --all"
+  },
+  "files": [
+    "index.js",
+    "index.html",
+    "index.css"
+  ],
+  "keywords": [
+    "electron-app",
+    "electron"
+  ],
   "dependencies": {
-    "body-parser": "^1.15.2",
-    "ejs": "^2.5.2",
-    "express": "^4.14.0",
-    "foreman": "^2.0.0",
-    "papaparse": "^4.1.2",
-    "request": "^2.79.0"
+    "electron-debug": "^1.0.0",
+    "electron-prebuilt": "^1.4.10"
+  },
+  "devDependencies": {
+    "devtron": "^1.1.0",
+    "electron": "^1.4.10",
+    "electron-packager": "^8.0.0",
+    "electron-prebuilt": "^1.4.10",
+    "xo": "^0.16.0"
+  },
+  "xo": {
+    "esnext": true,
+    "envs": [
+      "node",
+      "browser"
+    ]
   }
 }
