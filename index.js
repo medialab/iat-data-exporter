@@ -4,6 +4,7 @@ const electron = require('electron');
 const app = electron.app;
 
 const express = require(__dirname + '/resources/app/express');
+let shutDownServer;
 
 // adds debug features like hotkeys for triggering dev tools and reload
 require('electron-debug')();
@@ -18,7 +19,7 @@ function onClosed() {
 }
 
 function createMainWindow() {
-	express();
+	shutDownServer = express();
 	const win = new electron.BrowserWindow({
 		width: 800,
 		height: 500,
@@ -34,6 +35,7 @@ function createMainWindow() {
 }
 
 app.on('window-all-closed', () => {
+	shutDownServer();
 	if (process.platform !== 'darwin') {
 		app.quit();
 	}

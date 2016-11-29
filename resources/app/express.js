@@ -110,7 +110,13 @@ module.exports = () => {
     }
   });
 
-  app.listen(process.env.PORT || 3000, function () {
+  const server = app.listen(process.env.PORT || 3000, function () {
     console.log('Serving on port ' + (process.env.PORT || 3000) + '...');
   });
+
+  return function closeServer () {
+    console.log('Closing server...');
+    server.close();
+    process.exit();
+  }
 };
