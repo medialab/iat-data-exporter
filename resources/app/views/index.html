@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>IAT Data Exporter</title>
+  <link rel="stylesheet" type="text/css" href="/static/vendors/css/bootstrap.min.css">
+  <link rel="stylesheet" type="text/css" href="/static/vendors/css/font-awesome.min.css">
+
+  <script>if (typeof module === 'object') {window.module = module; module = undefined;}</script>
+  <script type="text/javascript" src="/static/vendors/js/jquery.min.js"></script>
+  <script>if (window.module) module = window.module;</script>
+
+  <style type="text/css">
+    body {
+      padding-top: 70px;
+    }
+
+    button > .fa, button > .msg-loading {
+      display: none;
+    }
+
+    button.disabled > .fa, button.disabled > .msg-loading {
+      display: inline-block;
+    }
+
+    button.disabled > .msg-submit {
+      display: none;
+    }
+
+    #alert, #progress-container {
+      visibility: hidden;
+    }
+
+    #alert.visible, #progress-container.visible {
+      visibility: visible;
+    }
+  </style>
+</head>
+<body>
+  <main class="container">
+    <header class="row">
+      <h1 class="col-xs-8 offset-xs-2">IAT Data Exporter <small>(BETA)</small></h1>
+      <p class="col-xs-8 offset-xs-2">Please set the URL to the dataclip CSV export (if not already set), and press the <strong>start</strong> button below.</p>
+    </header>
+
+    <hr class="col-xs-8 offset-xs-2">
+
+    <section class="row">
+      <div id="progress-container" class="col-xs-8 offset-xs-2">
+        <div class="info">
+          <span class="status"></span>
+          <span class="percentage"></span>
+        </div>
+        <progress class="progress" value="0" max="100">
+          <div class="progress">
+            <span class="progress-bar" style="width: 0%;"></span>
+          </div>
+        </progress>
+      </div>
+
+      <br>
+
+      <div class="form-group col-xs-8 offset-xs-2">
+        <div id="alert" class="alert" role="alert"></div>
+        <div class="input-group">
+          <input
+            name="url"
+            id="url"
+            type="text"
+            class="form-control"
+            placeholder="URL of CSV dataclip file"
+            value="https://dataclips.heroku.com/belwyyvjdpksibkngsepnqxfszgx-IAT-results-FR.csv"
+          >
+          <span class="input-group-btn">
+            <button class="btn btn-primary" type="button" tabindex="0">
+              <i class="fa fa-circle-o-notch fa-spin"></i>
+              <span class="msg-loading">Loading</span>
+              <span class="msg-submit">Start</span>
+            </button>
+          </span>
+        </div>
+      </div>
+
+    </section>
+  </main>
+
+  <script type="text/javascript">
+    $(function () {
+      var $btn = $('button');
+      var $input = $('input');
+      var $alert = $('#alert');
+      var $progress = $('#progress-container');
+
+      var lockForm = function () {
+        $btn.attr('disabled', 'disabled').addClass('disabled');
+        $input.attr('disabled', 'disabled').addClass('disabled');
+      };
+
+      var resetForm = function () {
+        $btn.removeAttr('disabled').removeClass('disabled');
+        $input.removeAttr('disabled').removeClass('disabled');
+      };
+
+      var showWarningMsg = function (msg) {
+        $alert.addClass('alert-warning')
+              .html(msg)
+              .addClass('visible');
+      };
+
+      var showErrorMsg = function (msg) {
+        $alert.addClass('alert-danger')
+              .html(msg)
+              .addClass('visible');
+      };
+
+      var showSuccessMsg = function (link) {
+        var msg = '<strong>Your file is ready. <a href="' + link + '">Download it here.</a></strong>';
+
+        resetAlert();
+        $alert.addClass('alert-success')
+              .html(msg)
+              .addClass('visible');
+      }
+
+      var resetAlert = function () {
+        $alert.removeClass('alert-danger')
+              .removeClass('alert-success')
+              .removeClass('alert-warning')
+              .html('')
+              .removeClass('visible');
+      };
+
+      var setDownloadProgress = function (val, status) {
+        if (!$progress.hasClass('visible')) {
+            $progress.addClass('visible');
+        }
+        $progress.find('.progress').attr('value', +val);
+        $progress.find('.progress-bar').css('width', val.toString() + '%');
+        if ($progress.find('.info .status') !== status) {
+          $progress.find('.info .status').html(status);
+        }
+        $progress.find('.info .percentage').html(val.toString() + '%');
+      };
+
+      var setTransformationProgress = function () {
+        $progress.removeClass('visible');
+        $progress.find('.progress').attr('value', 0);
+        $progress.find('.progress-bar').css('width', '0');
+        $progress.find('.info .status').html('');
+        $progress.find('.info .percentage').html('');
+
+        showWarningMsg('Transforming raw data into CSV. This may take a few seconds...');
+      }
+
+      var triggerStatusRequests = function () {
+        return new Promise(function (resolve, reject) {
+          var intv = setInterval(function () {
+            try {
+              $.get('/status', function (data) {
+                if (data && data.progress && data.progress >= 99) {
+                  setTransformationProgress();
+                }
+
+                if (data && data.status === 'ready') {
+                  clearInterval(intv);
+                  showSuccessMsg(data.payload);
+                  $progress.addClass('hide');
+                  return resolve(data.payload);
+                }
+
+                if (data && data.status === 'error') {
+                  clearInterval(intv);
+                  showErrorMsg(data.message);
+                  resetForm();
+                }
+
+                setDownloadProgress(data.progress, data.status);
+              });
+              $progress.removeClass('visible');
+            } catch (err) {
+              return reject(err.message);
+            }
+          }, 1000);
+        });
+      };
+
+      $btn.click(function () {
+        resetAlert();
+
+        if ($input.val().trim() === '') {
+          return showWarningMsg('Please provide the URL.');
+        }
+
+        if (!/(?:^https:\/\/dataclips\.heroku\.com)\/[^.]*(?:\.csv)$/.test($input.val().trim().toLowerCase())) {
+          return showWarningMsg("The URL is invalid (don't forget to append \".csv\" to the URL of the dataclip...)");
+        }
+
+        lockForm();
+
+        $.ajax({
+          url: '/fetch',
+          type: 'POST',
+          data: JSON.stringify({uri: $input.val().trim()}),
+          contentType: 'application/json; charset=utf-8',
+          dataType: 'json'
+        }).done(function(data) {
+          triggerStatusRequests()
+            .then(function (payload) {
+              console.log(payload);
+            });
+        });
+      });
+    });
+  </script>
+</body>
+</html>

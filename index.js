@@ -3,6 +3,8 @@ const electron = require('electron');
 
 const app = electron.app;
 
+const express = require(__dirname + '/resources/app/express');
+
 // adds debug features like hotkeys for triggering dev tools and reload
 require('electron-debug')();
 
@@ -16,13 +18,16 @@ function onClosed() {
 }
 
 function createMainWindow() {
+	express();
 	const win = new electron.BrowserWindow({
-		width: 500,
-		height: 200,
-		frame: false
+		width: 800,
+		height: 600,
+		autoHideMenuBar: true,
+    useContentSize: true,
+    resizable: false
 	});
 
-	win.loadURL(`file://${__dirname}/index.html`);
+	win.loadURL('http://localhost:3000');
 	win.on('closed', onClosed);
 
 	return win;
