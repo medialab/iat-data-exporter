@@ -1,6 +1,6 @@
-# IAT DATA EXPORTER [![XO code style](https://img.shields.io/badge/code_style-XO-5ed9c7.svg)](https://github.com/sindresorhus/xo)
+# IAT DATA EXPORTER
 
-> Given the URI of a CSV, this web app exports from a Heroku dataclip, processes/refines data and make it available for download. Used in the Trustlab project.
+> Given the URI of a CSV, export it from a Heroku dataclip, process/refine data and make it available for download. Used in the Trustlab project.
 
 
 ## Dev
@@ -26,4 +26,4 @@ Builds the app for macOS, Linux, and Windows, using [electron-packager](https://
 
 ## License
 
-MIT © [<%= name %>](<%= website %>)
+MIT © [Sciences Po médialab](http://medialab.sciences-po.fr)
