@@ -1,3 +1,4 @@
 node_modules
 /dist
 resources/app/public/downloads/*.csv
+resources/app/public/downloads/*.zip
