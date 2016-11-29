@@ -21,7 +21,7 @@ function createMainWindow() {
 	express();
 	const win = new electron.BrowserWindow({
 		width: 800,
-		height: 600,
+		height: 500,
 		autoHideMenuBar: true,
     useContentSize: true,
     resizable: false
