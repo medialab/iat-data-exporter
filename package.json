@@ -4,7 +4,8 @@
   "description": "Given the URI of a CSV export from a Heroku dataclip, process/refine data and make it available for download.",
   "main": "index.js",
   "scripts": {
-    "start": "nf start"
+    "start": "nf start",
+    "dev": "node index.js"
   },
   "repository": {
     "url": "git@github.com:medialab/iat-data-exporter.git",

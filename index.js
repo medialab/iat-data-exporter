@@ -39,56 +39,8 @@ app.get('/', function (req, res) {
 });
 
 app.post('/fetch', jsonParser, function (req, res) {
-  csvFileLinks = null;
-  isFetching = true;
-  eraseFilesFromDir(__dirname + '/public/downloadables/');
-
-  downloader(req.body.uri)
-    .then(function (data) {
-      return data.promise;
-    })
-    .then(function (pathToFile) {
-      percent(0, true);
-      isFetching = false;
-      isTransforming = true;
-      return Promise.resolve(pathToFile);
-    })
-    .then(function (pathToFile) {
-      return transformer(pathToFile);
-    })
-    .then(function (results) {
-      isTransforming = false;
-      return fileMaker(results, true);
-    })
-    .then(function (links) {
-      csvFileLinks = links;
-      eraseFilesFromDir(__dirname + '/public/');
-      return Promise.resolve(true);
-    })
-    .then(function () {
-      return zipper(__dirname + '/public/downloadables/', zipFileName());
-    })
-    .then(function (fileName) {
-      zipFile = fileName;
-      isReady = true;
-
-      try {
-        fs.unlink(__dirname + csvFileLinks.meta);
-        fs.unlink(__dirname + csvFileLinks.errors);
-        fs.unlink(__dirname + csvFileLinks.results);
-        csvFileLinks = null;
-      } catch (err) {
-        console.log(err);
-      }
-
-      return Promise.resolve(zipFile);
-    })
-    .catch(function (err) {
-      hasError = true;
-      errorMsg = err.message;
-    });
-
   res.status(200).send({status: 'Fetching data from database...', progress: percent()});
+  triggerFetch(req.body.uri);
 });
 
 app.get('/status', function (req, res) {
@@ -108,3 +60,58 @@ app.get('/status', function (req, res) {
 app.listen(process.env.PORT || 3000, function () {
   console.log('Serving on port ' + (process.env.PORT || 3000) + '...');
 });
+
+function triggerFetch(uri) {
+  console.log('---> Triggering fetch -> transform -> zip');
+  csvFileLinks = null;
+  isFetching = true;
+  eraseFilesFromDir(__dirname + '/public/downloadables/');
+
+  downloader(uri)
+    .then(function (data) {
+      return data.promise;
+    })
+    .then(function (pathToFile) {
+      console.log('---> Fetched');
+      percent(0, true);
+      isFetching = false;
+      isTransforming = true;
+      return Promise.resolve(pathToFile);
+    })
+    .then(function (pathToFile) {
+      return transformer(pathToFile);
+    })
+    .then(function (results) {
+      console.log('---> Transformed');
+      isTransforming = false;
+      return fileMaker(results, true);
+    })
+    .then(function (links) {
+      csvFileLinks = links;
+      eraseFilesFromDir(__dirname + '/public/');
+      return Promise.resolve(true);
+    })
+    .then(function () {
+      return zipper(__dirname + '/public/downloadables/', zipFileName());
+    })
+    .then(function (fileName) {
+      console.log('---> Zipped');
+      zipFile = fileName;
+      isReady = true;
+
+      try {
+        fs.unlink(__dirname + csvFileLinks.meta);
+        fs.unlink(__dirname + csvFileLinks.errors);
+        fs.unlink(__dirname + csvFileLinks.results);
+        csvFileLinks = null;
+      } catch (err) {
+        console.log(err);
+      }
+
+      return Promise.resolve(zipFile);
+    })
+    .catch(function (err) {
+      hasError = true;
+      errorMsg = err.message;
+    });
+}
