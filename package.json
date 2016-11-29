@@ -1,7 +1,7 @@
 {
   "name": "iat-data-exporter",
   "productName": "IAT Data Exporter",
-  "version": "2.0.0",
+  "version": "1.0.2",
   "description": "Given the URI of a CSV export from a Heroku dataclip, process/refine data and make it available for download.",
   "license": "MIT",
   "repository": {
