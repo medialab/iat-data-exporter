@@ -15,8 +15,8 @@
   },
   "scripts": {
     "test": "xo",
-    "start": "electron .",
-    "build": "electron-packager . --out=dist --asar --overwrite --all"
+    "start": "./node_modules/.bin/electron .",
+    "build": "./node_modules/.bin/electron-packager . --out=dist --asar --overwrite --all"
   },
   "files": [
     "index.js",
