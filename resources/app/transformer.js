@@ -17,7 +17,7 @@ const metaData = (meta, iat) => {
 
   // Recursively traverse and process entries of metadata.
   // Accumulate it into the payload array.
-  toCsv.push((function processRow(meta, iat, cursor, results) {
+  toCsv = toCsv.concat((function processRow(meta, iat, cursor, results) {
     if (cursor >= meta.length - 1) return results;
 
     let row = meta[cursor].split(',');
