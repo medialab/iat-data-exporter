@@ -1,6 +1,7 @@
 const https = require('https');
 const fs = require('fs');
 const percent = require(__dirname + '/percent');
+const request = require('request');
 let isBusy = false;
 let filename;
 let dest;
@@ -20,27 +21,35 @@ module.exports = uri => {
 
     file = fs.createWriteStream(dest);
 
-    req = require('request')({method: 'GET', uri: uri});
-    req.pipe(file);
+    // Make a first, unfollowed-through request.
+    // Just to trigger cache-busting of dataclip.
+    request({method: 'GET', uri: uri});
+    console.log('GET requesting to bust cache at Heroku...');
 
-    req.on('response', data => {
-      return resolve({
-        size: data.headers['content-length'],
-        promise: new Promise((resolve, reject) => {
-          let current = 0;
-          let total = +data.headers['content-length'];
+    return setTimeout(() => {
+      console.log('Actual GET request of data.');
+      req = request({method: 'GET', uri: uri});
+      req.pipe(file);
 
-          req.on('data', function (chunk) {
-            current += +chunk.length;
-            percent(parseInt((current / total) * 100));
-          });
+      req.on('response', data => {
+        return resolve({
+          size: data.headers['content-length'],
+          promise: new Promise((resolve, reject) => {
+            let current = 0;
+            let total = +data.headers['content-length'];
 
-          req.on('end', function () {
-            isBusy = false;
-            return resolve(dest);
-          });
-        })
-      });
+            req.on('data', function (chunk) {
+              current += +chunk.length;
+              percent(parseInt((current / total) * 100));
+            });
+
+            req.on('end', function () {
+              isBusy = false;
+              return resolve(dest);
+            });
+          })
+        });
+      }, 2000);
     });
   });
 };

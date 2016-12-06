@@ -12,7 +12,7 @@ const metaData = (meta, iat) => {
   // Define header labels while initializing the payload.
   let toCsv = [[
     'Player.id_in_group', 'Participant.code', 'Participant.label',
-    'Participant.time_started', 'Trials order', 'Error percentage'
+    'Trials order', 'Error percentage'
   ]];
 
   // Recursively traverse and process entries of metadata.
@@ -22,7 +22,7 @@ const metaData = (meta, iat) => {
 
     let row = meta[cursor].split(',');
 
-    results.push([row[0], row[1], row[2], row[10], iat[cursor].order, iat[cursor].error_percentage]);
+    results.push([row[0], row[1], row[2], iat[cursor].order, iat[cursor].error_percentage]);
 
     return processRow(meta, iat, ++cursor, results)
   })(meta, iat, 0, []));
@@ -34,14 +34,15 @@ const metaData = (meta, iat) => {
 /**
  * Generic function to parse and return CSV formatted data for a user's results and errors.
  *
- * @param  {array} meta                   The metadata for all user, that we'll traverse.
- * @param  {array} iat                    The IAT data for all user, that we'll traverse.
- * @param  {array} headerLabelsArray      An array of strings representing header label names.
- * @param  {array} timeRelatedFieldsArray An array of strings bearing the names of fields used for time-related data,
+ * @param  {array}   meta                   The metadata for all user, that we'll traverse.
+ * @param  {array}   iat                    The IAT data for all user, that we'll traverse.
+ * @param  {boolean} errorsOnly             Whether to process errors (if true) or results (if false).
+ * @param  {array}   headerLabelsArray      An array of strings representing header label names.
+ * @param  {array}   timeRelatedFieldsArray An array of strings bearing the names of fields used for time-related data,
  *                                        varying from one set of data to another.
  * @return {string}                       The parsed, CSV formatted data.
  */
-const trialsFile = (meta, iat, headerLabelsArray, timeRelatedFieldsArray) => {
+const trialsFile = (meta, iat, errorsOnly, headerLabelsArray, timeRelatedFieldsArray) => {
   let toCsv = [headerLabelsArray];
 
   // Recursively traverse and process each user.
@@ -52,16 +53,16 @@ const trialsFile = (meta, iat, headerLabelsArray, timeRelatedFieldsArray) => {
     let metaData = meta[cursor].split(',');
 
     // Prepare IAT results for the user.
-    let userResults = iat[cursor].results;
+    let userResults = errorsOnly ? iat[cursor].errors : iat[cursor].results;
 
     // Recursively traverse and process IAT results for the user.
-    (function processRow(mTurkId, code, label, timeStarted, data, index, results) {
+    (function processRow(mTurkId, code, label, data, index, results) {
       if (index >= data.length - 1) return results;
 
       // Accumulate the common data...
       // Prune HTML formatting when needed.
       let row = [
-        data[index].id, mTurkId, code, label, timeStarted,
+        data[index].id, mTurkId, code, label,
         data[index].left.split('<br /><span style="color:white">').join(' ').split('</span><br />').join(' '),
         data[index].right.split('<br /><span style="color:white">').join(' ').split('</span><br />').join(' '),
         data[index].stimuli, data[index].correctPosition,
@@ -75,8 +76,8 @@ const trialsFile = (meta, iat, headerLabelsArray, timeRelatedFieldsArray) => {
 
       results.push(row);
 
-      return processRow(mTurkId, code, label, timeStarted, data, ++index, results);
-    })('N/A', metaData[1], metaData[2], metaData[10], userResults, 0, results);
+      return processRow(mTurkId, code, label, data, ++index, results);
+    })('N/A', metaData[1], metaData[2], userResults, 0, results);
 
     return processUser(meta, iat, ++cursor, results);
   })(meta, iat, 0, []));
@@ -93,8 +94,8 @@ const trialsFile = (meta, iat, headerLabelsArray, timeRelatedFieldsArray) => {
  * @return {string}     The parsed, CSV formatted data.
  */
 const resultsData = (meta, iat) => {
-  return trialsFile(meta, iat, [
-    'Trial ID', 'Player MTurk ID', 'Code', 'Label', 'Time started', 'Left category',
+  return trialsFile(meta, iat, false, [
+    'Trial ID', 'Player MTurk ID', 'Code', 'Label', 'Left category',
     'Right category', 'Stimuli word', 'Correct position',
     'Correct category', 'Time taken'
   ], ['timing']);
@@ -108,8 +109,8 @@ const resultsData = (meta, iat) => {
  * @return {string}     The parsed, CSV formatted data.
  */
 const errorsData = (meta, iat) => {
-  return trialsFile(meta, iat, [
-    'Trial ID', 'Player MTurk ID', 'Code', 'Label', 'Time started', 'Left category',
+  return trialsFile(meta, iat, true, [
+    'Trial ID', 'Player MTurk ID', 'Code', 'Label', 'Left category',
     'Right category', 'Stimuli word', 'Correct position',
     'Correct category', 'Failed by time out', 'Time taken'
   ], ['timedOut', 'timing']);
@@ -141,9 +142,9 @@ module.exports = pathToFile => {
         }
 
         // Get JSON data payload from IAT.
-        let iat = line.indexOf('"{""') > -1 ?
-                    line.substring(line.indexOf('"{""') + 1 , line.length - 5) :
-                    null;
+        let iat = line.indexOf('"{""') > -1
+                  ? line.substring(line.indexOf('"{""') + 1 , line.length - 1)
+                  : null;
 
         if (!iat) {
           processLine(lines, ++cursor, results);
@@ -156,13 +157,14 @@ module.exports = pathToFile => {
 
         try {
           iat = JSON.parse(iat);
-          results.meta.push(raw);
-          results.iat.push(iat);
         } catch (err) {
           // Errors might occur during parsing, empirically...
           // Not necessarily a big deal (e.g. unknown characters).
           console.log('Caught an error while parsing IAT data — ', err.message);
         }
+
+        results.meta.push(raw);
+        results.iat.push(iat);
 
         return processLine(lines, ++cursor, results);
       })(lines, 0, data);
